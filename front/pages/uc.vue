@@ -52,7 +52,7 @@
 
 <script>
 import sparkMD5 from 'spark-md5'
-const CHUNK_SIZE = 1 * 1024 * 1024
+const CHUNK_SIZE = 10 * 1024 * 1024
 export default {
   async mounted() {
     const ret = await this.$http.get('/user/info')
@@ -271,6 +271,19 @@ export default {
       const hash = await this.calculateHashSample()
       this.hash = hash
 
+      // 问一下后端,文件是否上传过,如果没有,是否有存在的切片
+
+      const {
+        data: { uploaded, uploadedList },
+      } = await this.$http.post('/checkfile', {
+        hash: this.hash,
+        ext: this.file.name.split('.').pop(),
+      })
+      if (uploaded) {
+        //秒传
+        return this.$message.success('秒传成功')
+      }
+
       this.chunks = this.chunks.map((chunk, index) => {
         // 切片的名字  hash-index
         const name = hash + '-' + index
@@ -278,14 +291,16 @@ export default {
           hash,
           name,
           index,
-          progress: 0,
           chunk: chunk.file,
+          // 设置进度条,已经上传的,设为100
+          progress: uploadedList.indexOf(name) > -1 ? 100 : 0,
         }
       })
-      this.uploadChunks()
+      await this.uploadChunks(uploadedList)
     },
-    async uploadChunks() {
+    async uploadChunks(uploadedList) {
       const requests = this.chunks
+        .filter((chunk) => uploadedList.indexOf(chunk.name) == -1)
         .map((chunk, index) => {
           // 转成promise
           const form = new FormData()
@@ -321,7 +336,8 @@ export default {
       //       console.log(ret)
     },
     async mergeRequest() {
-      this.$http.post('mergefile', {
+      console.log(CHUNK_SIZE)
+      this.$http.post('/mergefile', {
         ext: this.file.name.split('.').pop(),
         size: CHUNK_SIZE,
         hash: this.hash,

@@ -1,6 +1,7 @@
 <template>
   <div>
     <h1>用户中心</h1>
+    <i class="el-icon-loading"></i>
     <div ref="drag" id="drag">
       <input type="file" name="file" @change="handleFileChange" />
     </div>
@@ -52,7 +53,7 @@
 
 <script>
 import sparkMD5 from 'spark-md5'
-const CHUNK_SIZE = 10 * 1024 * 1024
+const CHUNK_SIZE = 0.01 * 1024 * 1024
 export default {
   async mounted() {
     const ret = await this.$http.get('/user/info')
@@ -294,6 +295,7 @@ export default {
           chunk: chunk.file,
           // 设置进度条,已经上传的,设为100
           progress: uploadedList.indexOf(name) > -1 ? 100 : 0,
+          error: 0,
         }
       })
       await this.uploadChunks(uploadedList)
@@ -301,27 +303,29 @@ export default {
     async uploadChunks(uploadedList) {
       const requests = this.chunks
         .filter((chunk) => uploadedList.indexOf(chunk.name) == -1)
-        .map((chunk, index) => {
+        .map((chunk) => {
           // 转成promise
           const form = new FormData()
           form.append('chunk', chunk.chunk)
           form.append('hash', chunk.hash)
           form.append('name', chunk.name)
           // form.append('index',chunk.index)
-          return form
+          // 需要返回精确的index
+          return { form, index: chunk.index }
         })
-        .map((form, index) => {
-          this.$http.post('/uploadfile', form, {
-            onUploadProgress: (progress) => {
-              // 不是整体的进度，而是每个区块的进度，整体进度条需要计算
-              this.chunks[index].progress = Number(
-                ((progress.loaded / progress.total) * 100).toFixed(2)
-              )
-            },
-          })
-        })
+      // .map(({ form, index }) => {
+      //   this.$http.post('/uploadfile', form, {
+      //     onUploadProgress: (progress) => {
+      //       // 不是整体的进度，而是每个区块的进度，整体进度条需要计算
+      //       this.chunks[index].progress = Number(
+      //         ((progress.loaded / progress.total) * 100).toFixed(2)
+      //       )
+      //     },
+      //   })
+      // })
       // @todo 异步数据并发量的控制
       await Promise.all(requests)
+      await this.sendRequest(requests)
       await this.mergeRequest()
       //  const form = new FormData()
       //       form.append('name', 'file')
@@ -334,6 +338,68 @@ export default {
       //         },
       //       })
       //       console.log(ret)
+    },
+    // 上传可能报错
+    // 报错进度条变红,开始重试
+    // 一个切片报错三次,整体全部终止
+    async sendRequest(chunks, limit = 4) {
+      // limit =  并发数
+      //  一个数组,长度是limit
+      return new Promise((resolve, reject) => {
+        let isStop = false
+        let len = chunks.length
+        let counter = 0
+        const start = async () => {
+          if (isStop) {
+            return
+          }
+          const task = chunks.shift()
+          if (task) {
+            const { form, index } = task
+            try {
+              await this.$http.post('/uploadfile', form, {
+                onUploadProgress: (progress) => {
+                  // 不是整体的进度，而是每个区块的进度，整体进度条需要计算
+                  this.chunks[index].progress = Number(
+                    ((progress.loaded / progress.total) * 100).toFixed(2)
+                  )
+                },
+              })
+              if (counter == len - 1) {
+                //最后一个任务
+                resolve()
+              } else {
+                counter++
+                // 启动下一个任务
+                start()
+              }
+            } catch (error) {
+              this.chunks[index].progress = -1
+
+              // 出错后重试
+              if (task.error < 3) {
+                task.error++
+                // 为什么使用unshift而不是push呢
+                // 我们希望报错的任务马上重试,使用unshift从头部放进去
+                chunks.unshift(task)
+                start()
+              } else {
+                // 错误三次,直接结束
+                isStop = true
+                reject()
+              }
+            }
+          }
+        }
+
+        while (limit > 0) {
+          // 启动 limit个任务
+          setTimeout(() => {
+            start()
+          }, Math.random() * 2000)
+          limit -= 1
+        }
+      })
     },
     async mergeRequest() {
       console.log(CHUNK_SIZE)

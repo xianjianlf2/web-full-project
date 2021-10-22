@@ -45,7 +45,10 @@ class UtilController extends BaseController {
 
   async uploadfile() {
     // /public/hash/{hash+index}
-
+    // 模拟报错
+    if (Math.random() > 0.3) {
+      return (this.ctx.status = 500)
+    }
     const { ctx } = this
     const file = ctx.request.files[0]
     const { hash, name } = ctx.request.body
@@ -91,6 +94,7 @@ class UtilController extends BaseController {
   }
 
   async getUploadedList(dirPath) {
+    // 去除例如.DS_Store等系统自带文件的影响
     return fse.existsSync(dirPath)
       ? (await fse.readdir(dirPath)).filter((name) => name[0] !== '.')
       : []

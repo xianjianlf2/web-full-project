@@ -1,40 +1,25 @@
 <template>
   <div class="container">
-    <div>
-      <logo />
-      <h1 class="title">
-        front
-      </h1>
-      <h2 class="subtitle">
-        My posh Nuxt.js project
-      </h2>
-      <div class="links">
-        <a
-          href="https://nuxtjs.org/"
-          target="_blank"
-          class="button--green"
-        >
-          Documentation
-        </a>
-        <a
-          href="https://github.com/nuxt/nuxt.js"
-          target="_blank"
-          class="button--grey"
-        >
-          GitHub
-        </a>
-      </div>
-    </div>
+    <VirtualList :listData="articles" :size="300">
+      {{ article.title }}
+    </VirtualList>
   </div>
 </template>
 
 <script>
-import Logo from '~/components/Logo.vue'
-
+import VirtualList from '~/componrnts/VirtualList'
 export default {
-  components: {
-    Logo
-  }
+  data() {
+    return {
+      articles: [],
+    }
+  },
+  async mounted() {
+    let ret = await this.$http.get('/article')
+    if (ret.code === 0) {
+      this.article = ret.data
+    }
+  },
 }
 </script>
 

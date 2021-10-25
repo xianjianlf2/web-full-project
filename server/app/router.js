@@ -3,7 +3,7 @@
 /**
  * @param {Egg.Application} app - egg application
  */
-module.exports = app => {
+module.exports = (app) => {
   const { router, controller } = app
   const jwt = app.middleware.jwt({ app })
   router.get('/', controller.home.index)
@@ -14,12 +14,20 @@ module.exports = app => {
   router.post('/mergefile', controller.util.mergefile)
   router.post('/checkfile', controller.util.checkfile)
 
-  router.group({ name: 'user', prefix: '/user' }, router => {
+  router.group({ name: 'user', prefix: '/user' }, (router) => {
     const { info, register, login, verify } = controller.user
 
     router.post('/register', register)
     router.post('/login', login)
     router.get('/info', jwt, info)
+    router.get('/detail', jwt, info)
     router.get('/verify', verify)
+  })
+
+  router.group({ name: 'article', prefix: '/article' }, (router) => {
+    const { create, detail, index } = controller.article
+    // router.post('/create', jwt, create)
+    // router.get('/:id', detail)
+    router.get('/', index)
   })
 }

@@ -11,7 +11,7 @@ const service = axios.create({
 
 export default ({ store, redirect }) => {
   service.interceptors.request.use(async config => {
-    const token = localStorage.getItem('token')
+    const token = localStorage.getItem('KKB_USER_TOKEN')
     if (token) {
       config.headers.common['Authorization'] = 'Bearer' + token
     }
@@ -28,7 +28,7 @@ export default ({ store, redirect }) => {
         showCancelButton: false,
         type: 'warning'
       }).then(() => {
-        localStorage.removeItem('token')
+        localStorage.removeItem('KKB_USER_TOKEN')
         // redirect()
         redirect({ path: 'login' })
       })

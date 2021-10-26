@@ -12,6 +12,18 @@ module.exports = (app) => {
       passwd: { type: String, required: true, select: false },
       nickname: { type: String, required: true },
       avatar: { type: String, required: false, default: '/user.png' },
+      following: {
+        type: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+        default: [],
+      },
+      likeArticle: {
+        type: [{ type: Schema.Types.ObjectId, ref: 'Article' }],
+        default: [],
+      },
+      disLikeArticle: {
+        type: [{ type: Schema.Types.ObjectId, ref: 'Article' }],
+        default: [],
+      },
     },
     { timestamps: true }
   )

@@ -90,7 +90,7 @@ export default {
           if (ret.code == 0) {
             // token的存储 登录成功返回token
             this.$message.success('登录成功')
-            localStorage.setItem('token', ret.data.token)
+            localStorage.setItem('KKB_USER_TOKEN', ret.data.token)
             setTimeout(() => {
               this.$router.push('/uc')
             }, 500)

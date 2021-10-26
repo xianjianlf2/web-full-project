@@ -14,6 +14,7 @@
     "egg-validate": "^2.0.2",
     "fs-extra": "^10.0.0",
     "jsonwebtoken": "^8.5.1",
+    "marked": "^3.0.8",
     "md5": "^2.3.0",
     "nodemailer": "^6.7.0",
     "svg-captcha": "^1.4.0"

@@ -1,14 +1,23 @@
 <template>
-  <div class="container">
-    <VirtualList :listData="articles" :size="300">
-      {{ article.title }}
+  <div class="kkb-container">
+    <VirtualList
+      :listData="articles"
+      :estimatedItemSize="300"
+      v-slot="slotProps"
+    >
+      <!-- <ArticleItem :article="slotProps"  :key="slotProps._id"/> -->
+      <div>ppp</div>
     </VirtualList>
   </div>
 </template>
 
 <script>
-import VirtualList from '~/componrnts/VirtualList'
+import VirtualList from '~/components/VirtualList.vue'
+
 export default {
+  components: {
+    VirtualList,
+  },
   data() {
     return {
       articles: [],
@@ -16,8 +25,8 @@ export default {
   },
   async mounted() {
     let ret = await this.$http.get('/article')
-    if (ret.code === 0) {
-      this.article = ret.data
+    if (ret.code == 0) {
+      this.articles = ret.data
     }
   },
 }
@@ -53,5 +62,12 @@ export default {
 
 .links {
   padding-top: 15px;
+}
+html {
+  height: 100%;
+}
+body {
+  height: 100%;
+  margin: 0;
 }
 </style>

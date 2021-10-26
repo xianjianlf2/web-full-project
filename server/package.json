@@ -42,7 +42,8 @@
     "cov": "egg-bin cov",
     "lint": "eslint .",
     "ci": "npm run lint && npm run cov",
-    "autod": "autod"
+    "autod": "autod",
+    "start:docker": "egg-scripts start --title=egg-server-server"
   },
   "ci": {
     "version": "10"
